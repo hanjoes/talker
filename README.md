@@ -1,2 +1,3 @@
 # talker
-Utility package implements the "mouth" of those programs can talk back to people.
+
+This is a package serves as the mouth of those programs that can talk back to user.
