@@ -26,14 +26,28 @@ func (talker *Talker) Run() {
 	reader := bufio.NewReader(os.Stdin)
 	writer := bufio.NewWriter(os.Stdout)
 	for {
-		writer.WriteString(talker.prompt)
-		writer.Flush()
+		instantWrite(writer, []byte(talker.prompt))
 		input, err := reader.ReadBytes('\x0A')
-		if err != nil && err == io.EOF {
-			break
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else {
+				panic(err)
+			}
 		}
 		output := talker.brain.Process(input[:len(input)-1])
-		writer.Write(append(output, '\x0A'))
-		writer.Flush()
+		instantWrite(writer, output)
+	}
+}
+
+func instantWrite(writer *bufio.Writer, output []byte) {
+	_, err := writer.Write(append(output))
+	if err != nil {
+		panic(err)
+	}
+
+	err = writer.Flush()
+	if err != nil {
+		panic(err)
 	}
 }
