@@ -2,6 +2,7 @@ package talker
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -12,9 +13,9 @@ type Brain interface {
 }
 
 type Talker struct {
-	history [][]byte
 	brain   Brain
 	prompt  string
+	history []string
 }
 
 // CreateTalker creates a Talker.
@@ -44,13 +45,18 @@ func (talker *Talker) Run() {
 		// fmt.Printf("Got byte: %q", b)
 
 		switch b {
-		case '\x0A':
+		case '\x0A': // LF
 			buffer = []byte(strings.TrimRight(string(buffer), "\x0A\x0D"))
+			talker.history = append(talker.history, string(buffer))
 			output := talker.brain.Process(buffer[:len(buffer)])
 			instantWrite(writer, output)
 
 			buffer = buffer[:0]
 			instantWrite(writer, []byte(talker.prompt))
+		case '\x18': // UP
+			break
+		case '\x19': // DOWN
+			break
 		}
 	}
 }
@@ -64,5 +70,12 @@ func instantWrite(writer *bufio.Writer, output []byte) {
 	err = writer.Flush()
 	if err != nil {
 		panic(err)
+	}
+}
+
+func (t *Talker) ReportHistory() {
+	fmt.Printf("%d entries in history\n", len(t.history))
+	for _, entry := range t.history {
+		fmt.Println(entry)
 	}
 }
