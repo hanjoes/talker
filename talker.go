@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"io"
 	"os"
+	"strings"
 )
 
 type Brain interface {
@@ -25,9 +26,11 @@ func CreateTalker(brain Brain, prompt string) *Talker {
 func (talker *Talker) Run() {
 	reader := bufio.NewReader(os.Stdin)
 	writer := bufio.NewWriter(os.Stdout)
+	buffer := make([]byte, 0)
+
+	instantWrite(writer, []byte(talker.prompt))
 	for {
-		instantWrite(writer, []byte(talker.prompt))
-		input, err := reader.ReadBytes('\x0A')
+		b, err := reader.ReadByte()
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -35,8 +38,20 @@ func (talker *Talker) Run() {
 				panic(err)
 			}
 		}
-		output := talker.brain.Process(input[:len(input)-1])
-		instantWrite(writer, output)
+
+		buffer = append(buffer, b)
+
+		// fmt.Printf("Got byte: %q", b)
+
+		switch b {
+		case '\x0A':
+			buffer = []byte(strings.TrimRight(string(buffer), "\x0A\x0D"))
+			output := talker.brain.Process(buffer[:len(buffer)])
+			instantWrite(writer, output)
+
+			buffer = buffer[:0]
+			instantWrite(writer, []byte(talker.prompt))
+		}
 	}
 }
 
