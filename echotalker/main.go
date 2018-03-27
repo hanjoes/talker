@@ -7,7 +7,7 @@ import (
 type echoBrain struct{}
 
 func (eb echoBrain) Process(input []byte) []byte {
-	return append([]byte("echo > "), append(input, '\x0A')...)
+	return append([]byte("< "), append(input, '\x0A')...)
 }
 
 func main() {
