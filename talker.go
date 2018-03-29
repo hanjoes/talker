@@ -7,10 +7,16 @@ import (
 	"github.com/hanjoes/keyboard"
 )
 
+// Brain is the interface implemented by user.
+// Implement the process method that takes input from the talker
+// and outputs the result.
 type Brain interface {
 	Process(input []byte) []byte
 }
 
+// Talker is a simple program implements the "tty-like" behavior.
+// This struct contains all the essential information needed for
+// the implementation.
 type Talker struct {
 	brain   Brain
 	prompt  string
@@ -33,20 +39,29 @@ func (t *Talker) Run() {
 	t.writePrompt()
 	for {
 		select {
-		case b := <-kb.In:
-			fmt.Print(string(b))
-			t.buffer = append(t.buffer, b)
-
-			switch b {
-			case '\x0A': // LF
-				t.buffer = []byte(strings.TrimRight(string(t.buffer), "\x0A\x0D"))
-				// talker.history = append(talker.history, string(buffer))
-				output := t.brain.Process(t.buffer[:len(t.buffer)])
-				fmt.Print(string(output))
-				t.buffer = t.buffer[:0]
-				t.writePrompt()
-			case '\x7f': // backspace
-				t.backspace()
+		case in := <-kb.In:
+			sequence := in.Input
+			switch len(sequence) {
+			case 1:
+				chr := sequence[0]
+				fmt.Print(string(chr))
+				t.buffer = append(t.buffer, chr)
+				switch chr {
+				case '\x0A': // LF
+					t.buffer = []byte(strings.TrimRight(string(t.buffer), "\x0A\x0D"))
+					// talker.history = append(talker.history, string(buffer))
+					output := t.brain.Process(t.buffer[:len(t.buffer)])
+					fmt.Print(string(output))
+					t.buffer = t.buffer[:0]
+					t.writePrompt()
+				case '\x7f': // backspace
+					t.backspace()
+				case '\x03': // ctr+c
+					fmt.Println("\nGood bye!")
+					return
+				}
+			default:
+				break
 			}
 		}
 	}
