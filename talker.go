@@ -89,13 +89,17 @@ func (t *Talker) handleCharacter(chr byte) {
 	switch chr {
 	case '\x0A': // linefeed
 		t.buffer = []byte(strings.TrimRight(string(t.buffer), "\x0A\x0D"))
+
 		input := t.buffer[:len(t.buffer)]
-		t.history = append(t.history, string(input))
+		if len(input) > 0 {
+			t.history = append(t.history, string(input))
+		}
 		output := t.brain.Process(input)
+
 		fmt.Print(string(output))
 		t.buffer = t.buffer[:0]
 		t.writePrompt()
-		t.pos++
+		t.pos = len(t.history)
 	case '\x7f': // backspace
 		t.backspace()
 	case '\x03': // ctr+c
@@ -109,20 +113,28 @@ func (t *Talker) handleEscapeSequenc(sequence []byte) {
 	case "\x1b\x5b\x41": // arrow up
 		if t.pos > 0 {
 			t.pos--
-			t.showHistory()
+			t.renderHistory()
 		}
 		// fmt.Println("up arrow")
 	case "\x1b\x5b\x42": // arrow down
 		if t.pos < len(t.history)-1 {
 			t.pos++
-			t.showHistory()
+			t.renderHistory()
+		} else {
+			t.killLine()
 		}
 	}
 }
 
-func (t *Talker) showHistory() {
+func (t *Talker) killLine() {
 	fmt.Print(erasel)
 	fmt.Print(cr)
 	t.writePrompt()
+	t.buffer = t.buffer[:0]
+}
+
+func (t *Talker) renderHistory() {
+	t.killLine()
 	fmt.Print(t.history[t.pos])
+	t.buffer = []byte(t.history[t.pos])
 }
