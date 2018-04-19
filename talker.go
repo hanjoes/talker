@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	erasel = "\x1b[2K"
-	cr     = "\r"
+	erasel = "\x1b[2K" // erase a line
+	cr     = "\r"      // carriage return
 )
 
 // Brain is the interface implemented by user.
